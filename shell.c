@@ -7,6 +7,7 @@ char *args[1100];
 char *curdir;
 char *username;
 int tokenize(){
+    int quotation =0;
     char *buffer = NULL;
     size_t bufsize=0;
     int readsize = getline(&buffer,&bufsize ,stdin);
@@ -16,25 +17,47 @@ int tokenize(){
         }
         *(buffer+readsize-1)=' ';
         int j=0,i=0;
-        if(*buffer !=' ')
+        if(*buffer =='"')
+            *buffer = '\0',args[j++]=buffer+1,i++,quotation = 1;
+        else if(*buffer !=' ')
             args[j++]=buffer,i++;
-        for(; i < readsize-1;i++){
+        for(; i < readsize-1;i++)
+        {
+
+            if(quotation)
+            {
+                if(*(buffer+i) =='"')
+                    *(buffer+i) = '\0',quotation =0;
+                continue;
+            }
+
+            if(*(buffer+i) == '"'){
+                *(buffer+i) = '\0';
+                quotation =1;
+                args[j++] = buffer+i+1;
+                continue;
+            }
 
             if(*(buffer+i) ==' ' && *(buffer+i+1) ==' ')
             {
                 *(buffer+i)= '\0';
                 continue;
             }
+
             if(*(buffer+i) ==' ')
             {
+                if(*(buffer+i+1) == '"')
+                    continue;
                 *(buffer+i) = '\0';
                 args[j++] = buffer+i+1;
 
             }
+
         }
         *(buffer+readsize-1) = '\0';
         args[j] =NULL;
-
+        if(quotation)
+            return 1;
     return 0;
 }
 int cd()
@@ -65,6 +88,7 @@ int main(){
         pid = fork();
         if(pid == 0)
         {
+            printf("%s",args[0]);
 
            if( execvp(args[0],args) ==-1){
                printf("The command does not exist\n");
